@@ -48,11 +48,6 @@ def get_random_background_music():
         return None
 
 @app.route('/')
-def index():
-    """메인 페이지 - 게임 시작 화면"""
-    return render_template('game/start.html')
-
-@app.route('/dashboard')
 def dashboard():
     """대시보드 페이지"""
     total_quizzes = database.get_quiz_count()
@@ -539,17 +534,9 @@ if __name__ == '__main__':
     # 데이터베이스 초기화
     database.init_database()
     
-    # 샘플 퀴즈 자동 로드 (퀴즈가 없을 때만)
-    if database.get_quiz_count() == 0:
-        try:
-            from add_sample_data import add_sample_quizzes
-            add_sample_quizzes()
-            print("✅ 샘플 퀴즈가 자동으로 로드되었습니다!")
-        except Exception as e:
-            print(f"⚠️ 샘플 퀴즈 로드 실패: {e}")
+    print("🎮 방탈출 퀴즈 관리 시스템이 시작되었습니다!")
+    print(f"📝 대시보드: http://localhost:{port}")
+    print(f"📋 퀴즈 목록: http://localhost:{port}/quiz/list")
+    print(f"⚙️  관리자 콘솔: http://localhost:{port}/admin")
     
-    print("🎮 방탈출 게임이 시작되었습니다!")
-    print("🌐 게임 시작: http://localhost:5000")
-    print("⚙️ 관리자: http://localhost:5000/dashboard")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    app.run(debug=True, host='0.0.0.0', port=port) 
