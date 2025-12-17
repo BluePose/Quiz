@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방탈출 게임 - 어둠 속의 탈출</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%);
+            min-height: 100vh;
+            font-family: 'Orbitron', monospace;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 애니메이션 배경 */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .floating-particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+        }
+
+        /* 메인 컨테이너 */
+        .game-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 게임 타이틀 */
+        .game-title {
+            font-family: 'Creepster', cursive;
+            font-size: 4rem;
+            color: #ff6b6b;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.5), 0 0 40px rgba(255, 107, 107, 0.3);
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+            text-align: center;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .game-subtitle {
+            font-size: 1.2rem;
+            color: #cccccc;
+            margin-bottom: 40px;
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        /* 스토리 박스 */
+        .story-box {
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .story-text {
+            color: #ffffff;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .story-highlight {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        /* 입장 버튼 */
+        .enter-button {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 15px 40px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .enter-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.6);
+            background: linear-gradient(45deg, #ff8e8e, #ff6b6b);
+        }
+
+        .enter-button:active {
+            transform: translateY(0);
+        }
+
+        /* 경고 메시지 */
+        .warning-box {
+            background: rgba(139, 69, 19, 0.3);
+            border: 1px solid #ff6b6b;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .warning-text {
+            color: #ffcccc;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2.5rem;
+            }
+            
+            .story-box {
+                padding: 20px;
+                margin: 0 10px 30px 10px;
+            }
+            
+            .enter-button {
+                font-size: 1.2rem;
+                padding: 12px 30px;
+            }
+        }
+
+        /* 로딩 효과 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            color: #ff6b6b;
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 애니메이션 배경 -->
+    <div class="background-animation" id="backgroundAnimation"></div>
+
+    <!-- 로딩 오버레이 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="text-center">
+            <i class="fas fa-spinner loading-spinner"></i>
+            <div class="text-white mt-3">어둠 속으로 들어가는 중...</div>
+        </div>
+    </div>
+
+    <!-- 메인 컨테이너 -->
+    <div class="game-container">
+        <h1 class="game-title">
+            <i class="fas fa-door-closed me-3"></i>
+            ESCAPE ROOM
+        </h1>
+        
+        <p class="game-subtitle">어둠 속의 탈출</p>
+        
+        <div class="story-box">
+            <div class="story-text">
+                당신은 <span class="story-highlight">의문의 장소</span>에서 깨어났습니다.<br>
+                주변은 어둡고 고요하며, 오직 <span class="story-highlight">탈출</span>만이 유일한 선택입니다.<br><br>
+                
+                각 방마다 <span class="story-highlight">수수께끼</span>가 기다리고 있으며,<br>
+                모든 퍼즐을 풀어야만 <span class="story-highlight">자유</span>를 얻을 수 있습니다.<br><br>
+                
+                <strong>주의:</strong> 실수는 <span class="story-highlight">3번</span>까지만 허용되며,<br>
+                힌트는 <span class="story-highlight">5개</span>만 사용할 수 있습니다.
+            </div>
+        </div>
+        
+        <form method="POST" action="{{ url_for('game_enter') }}" id="enterForm">
+            <button type="submit" class="enter-button">
+                <i class="fas fa-door-open me-2"></i>
+                입장하기
+            </button>
+        </form>
+        
+        <div class="warning-box">
+            <p class="warning-text">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                게임을 시작하면 언제든지 도중에 나갈 수 있지만,<br>
+                진행 상황은 저장되지 않습니다.
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 배경 파티클 생성
+        function createParticles() {
+            const animation = document.getElementById('backgroundAnimation');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'floating-particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                animation.appendChild(particle);
+            }
+        }
+
+        // 폼 제출 시 로딩 표시
+        document.getElementById('enterForm').addEventListener('submit', function(e) {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        });
+
+        // 페이지 로드 시 파티클 생성
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+        });
+
+        // 키보드 이벤트 (Enter 키로 게임 시작)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('enterForm').submit();
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quiz[1] }} - 퀴즈 상세보기{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-2">
+                    <i class="fas fa-door-open me-2"></i>{{ quiz[1] }}
+                </h1>
+                <small class="text-muted">
+                    <i class="fas fa-calendar me-1"></i>
+                    생성일: {{ quiz[6] }}
+                </small>
+            </div>
+            <div>
+                <!-- 이전/다음 퀴즈 편집 버튼 -->
+                <div class="btn-group me-2" role="group">
+                    {% if prev_quiz_id %}
+                    <a href="{{ url_for('edit_quiz_page', quiz_id=prev_quiz_id) }}" class="btn btn-outline-primary btn-sm" title="이전 퀴즈 편집">
+                        <i class="fas fa-chevron-left me-1"></i>이전 편집
+                    </a>
+                    {% endif %}
+                    {% if next_quiz_id %}
+                    <a href="{{ url_for('edit_quiz_page', quiz_id=next_quiz_id) }}" class="btn btn-outline-primary btn-sm" title="다음 퀴즈 편집">
+                        <i class="fas fa-chevron-right me-1"></i>다음 편집
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <a href="{{ url_for('admin_console') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-arrow-left me-1"></i>관리자 콘솔
+                </a>
+                <a href="{{ url_for('edit_quiz_page', quiz_id=quiz[0]) }}" class="btn btn-primary me-2">
+                    <i class="fas fa-edit me-1"></i>편집
+                </a>
+                <button type="button" class="btn btn-danger" onclick="deleteQuiz()">
+                    <i class="fas fa-trash me-1"></i>삭제
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 퀴즈 상세 정보 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <!-- 방의 배경 묘사 -->
+                <div class="mb-4">
+                    {% if quiz[6] %}
+                    <!-- 이미지가 있는 경우 -->
+                    <div class="text-center mb-3">
+                        <img src="{{ url_for('static', filename='images/' + quiz[6]) }}" 
+                             class="img-fluid rounded shadow" style="max-height: 400px; object-fit: cover;"
+                             alt="{{ quiz[1] }} 배경 이미지">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <i class="fas fa-home fa-2x text-muted"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <h5 class="text-muted mb-2">
+                                <i class="fas fa-home me-2"></i>방의 배경 묘사
+                            </h5>
+                            <p class="lead" style="white-space: pre-wrap;">{{ quiz[2] }}</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- 이미지가 없는 경우 -->
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="bg-light p-3 rounded text-center">
+                                <i class="fas fa-image fa-2x text-muted"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <h5 class="text-muted mb-2">
+                                <i class="fas fa-home me-2"></i>방의 배경 묘사
+                            </h5>
+                            <p class="lead" style="white-space: pre-wrap;">{{ quiz[2] }}</p>
+                            <div class="mt-3">
+                                <a href="{{ url_for('admin_console') }}" class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-upload me-1"></i>이미지 업로드하기
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <!-- 문제 -->
+                <div class="mb-4">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded text-center">
+                                <i class="fas fa-question fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                                                 <div class="col-md-10">
+                             <h5 class="text-primary mb-2">
+                                 <i class="fas fa-puzzle-piece me-2"></i>문제
+                             </h5>
+                             <p class="fs-5" style="white-space: pre-wrap;">{{ quiz[3] }}</p>
+                         </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- 힌트 -->
+                <div class="mb-4">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="bg-info bg-opacity-10 p-3 rounded text-center">
+                                <i class="fas fa-lightbulb fa-2x text-info"></i>
+                            </div>
+                        </div>
+                                                 <div class="col-md-10">
+                             <h5 class="text-info mb-2">
+                                 <i class="fas fa-lightbulb me-2"></i>힌트
+                             </h5>
+                             <p class="fs-5 text-info" style="white-space: pre-wrap;">{{ quiz[4] }}</p>
+                         </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- 답 -->
+                <div class="mb-0">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="bg-success bg-opacity-10 p-3 rounded text-center">
+                                <i class="fas fa-check-circle fa-2x text-success"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <h5 class="text-success mb-2">
+                                <i class="fas fa-key me-2"></i>정답
+                            </h5>
+                            <div class="alert alert-success">
+                                <h4 class="mb-0 fw-bold">{{ quiz[5] }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 연속 편집 네비게이션 -->
+{% if prev_quiz_id or next_quiz_id %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow border-primary">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>연속 편집
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <p class="text-muted mb-3">다른 퀴즈를 바로 편집하려면 아래 버튼을 클릭하세요.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    {% if prev_quiz_id %}
+                    <a href="{{ url_for('edit_quiz_page', quiz_id=prev_quiz_id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-chevron-left me-2"></i>이전 퀴즈 편집
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('edit_quiz_page', quiz_id=quiz[0]) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>현재 퀴즈 편집
+                    </a>
+                    {% if next_quiz_id %}
+                    <a href="{{ url_for('edit_quiz_page', quiz_id=next_quiz_id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-chevron-right me-2"></i>다음 퀴즈 편집
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 방탈출 게임 시뮬레이션 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-gamepad me-2"></i>게임 시뮬레이션
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="gameSimulation" class="text-center">
+                                         <div class="mb-3">
+                         <i class="fas fa-door-closed fa-3x text-primary mb-2"></i>
+                         <h5>{{ quiz[1] }}에 갇혔습니다!</h5>
+                         <p class="text-muted" style="white-space: pre-wrap;">{{ quiz[2] }}</p>
+                     </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-primary" onclick="showQuestion()">
+                            <i class="fas fa-search me-1"></i>문제 확인하기
+                        </button>
+                    </div>
+
+                    <!-- 문제 표시 영역 -->
+                    <div id="questionArea" style="display: none;" class="mb-3">
+                                                 <div class="alert alert-info">
+                             <h6>📝 문제</h6>
+                             <p class="mb-0" style="white-space: pre-wrap;">{{ quiz[3] }}</p>
+                         </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mx-auto">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" id="userAnswer" placeholder="답을 입력하세요...">
+                                    <button class="btn btn-success" type="button" onclick="checkAnswer()">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="showHint()">
+                                <i class="fas fa-lightbulb me-1"></i>힌트 보기
+                            </button>
+                        </div>
+                        
+                                                 <!-- 힌트 표시 영역 -->
+                         <div id="hintArea" style="display: none;" class="alert alert-warning">
+                             <h6>💡 힌트</h6>
+                             <p class="mb-0" style="white-space: pre-wrap;">{{ quiz[4] }}</p>
+                         </div>
+                    </div>
+
+                    <!-- 결과 표시 영역 -->
+                    <div id="resultArea" style="display: none;">
+                        <!-- 성공/실패 메시지가 여기에 표시됩니다 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    퀴즈 삭제 확인
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>정말로 이 퀴즈를 삭제하시겠습니까?</p>
+                <p class="text-primary fw-bold">{{ quiz[1] }}</p>
+                <p class="text-danger"><strong>이 작업은 되돌릴 수 없습니다!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <form method="POST" action="{{ url_for('delete_quiz_route', quiz_id=quiz[0]) }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>삭제
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const correctAnswer = "{{ quiz[5] }}";
+
+function showQuestion() {
+    document.getElementById('questionArea').style.display = 'block';
+    document.getElementById('userAnswer').focus();
+}
+
+function showHint() {
+    document.getElementById('hintArea').style.display = 'block';
+}
+
+function checkAnswer() {
+    const userAnswer = document.getElementById('userAnswer').value.trim();
+    const resultArea = document.getElementById('resultArea');
+    
+    if (!userAnswer) {
+        alert('답을 입력해주세요!');
+        return;
+    }
+    
+    if (userAnswer === correctAnswer) {
+        resultArea.innerHTML = `
+            <div class="alert alert-success">
+                <h5><i class="fas fa-trophy me-2"></i>정답입니다! 🎉</h5>
+                <p class="mb-2">축하합니다! ${document.querySelector('h1').textContent.replace('🚪 ', '')}에서 탈출했습니다!</p>
+                <button type="button" class="btn btn-success" onclick="resetGame()">
+                    <i class="fas fa-redo me-1"></i>다시 도전하기
+                </button>
+            </div>
+        `;
+        
+        // confetti 효과 (간단한 텍스트 애니메이션)
+        showCelebration();
+    } else {
+        resultArea.innerHTML = `
+            <div class="alert alert-danger">
+                <h6><i class="fas fa-times me-2"></i>틀렸습니다!</h6>
+                <p class="mb-2">다시 시도해보세요. 힌트를 참고해보세요!</p>
+                <button type="button" class="btn btn-warning btn-sm" onclick="showHint()">
+                    <i class="fas fa-lightbulb me-1"></i>힌트 보기
+                </button>
+            </div>
+        `;
+    }
+    
+    resultArea.style.display = 'block';
+}
+
+function showCelebration() {
+    // 간단한 텍스트 애니메이션 효과
+    const celebration = document.createElement('div');
+    celebration.innerHTML = '🎉 ESCAPE SUCCESS! 🎉';
+    celebration.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2rem;
+        font-weight: bold;
+        color: #28a745;
+        z-index: 9999;
+        animation: bounce 1s ease-in-out;
+    `;
+    
+    document.body.appendChild(celebration);
+    
+    setTimeout(() => {
+        document.body.removeChild(celebration);
+    }, 2000);
+}
+
+function resetGame() {
+    document.getElementById('questionArea').style.display = 'none';
+    document.getElementById('hintArea').style.display = 'none';
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('userAnswer').value = '';
+}
+
+function deleteQuiz() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Enter 키로 답 제출
+document.getElementById('userAnswer').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        checkAnswer();
+    }
+});
+
+// CSS 애니메이션 추가
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes bounce {
+        0%, 20%, 60%, 100% {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        40% {
+            transform: translate(-50%, -50%) scale(1.2);
+        }
+        80% {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %} 

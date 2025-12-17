@@ -1,0 +1,734 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 콘솔 - 방탈출 게임 퀴즈 관리자{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-cog me-2"></i>관리자 콘솔
+            </h1>
+            <div>
+                <span class="badge bg-info fs-6">총 {{ all_quizzes|length }}개 퀴즈</span>
+                <span class="badge bg-warning fs-6">{{ quizzes_without_images|length }}개 이미지 누락</span>
+                <span class="badge bg-success fs-6">{{ music_files|length }}개 배경음악</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 배경음악 관리 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-music me-2"></i>배경음악 관리
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>음악 업로드</h6>
+                        
+                        <!-- 대량 파일 업로드 -->
+                        <div class="mb-3">
+                            <label class="form-label small">배경음악 업로드</label>
+                            <form id="bulkMusicUploadForm" enctype="multipart/form-data">
+                                <div class="input-group mb-2">
+                                    <input type="file" class="form-control" id="bulkMusicFileInput" 
+                                           accept=".mp3,.wav,.ogg,.m4a" name="music_files" multiple>
+                                    <button type="button" class="btn btn-primary" onclick="bulkUploadMusic()">
+                                        <i class="fas fa-cloud-upload-alt me-1"></i>업로드
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <small class="text-muted">
+                            <strong>지원 형식:</strong> MP3, WAV, OGG, M4A<br>
+                            <strong>파일 크기:</strong> 개별 파일 최대 50MB, 대량 업로드 시 총 500MB<br>
+                            <strong>선택 방법:</strong> Ctrl+클릭 또는 Shift+클릭으로 여러 파일 선택
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>현재 배경음악 ({{ music_files|length }}개)</h6>
+                        {% if music_files %}
+                        <div class="list-group" style="max-height: 200px; overflow-y: auto;">
+                            {% for music_file in music_files %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-music me-2 text-success"></i>
+                                    <small>{{ music_file }}</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="deleteMusic('{{ music_file }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted small">업로드된 배경음악이 없습니다.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 이미지 업로드 가이드 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info" role="alert">
+            <h5 class="alert-heading">
+                <i class="fas fa-info-circle me-2"></i>이미지 업로드 가이드
+            </h5>
+            <hr>
+            <p class="mb-2"><strong>1. 외부 이미지 생성:</strong> amuse 3.0 프로그램을 사용하여 퀴즈에 맞는 배경 이미지를 생성하세요.</p>
+            <p class="mb-2"><strong>2. 이미지 업로드:</strong> 아래 퀴즈 목록에서 해당 퀴즈의 "이미지 업로드" 버튼을 클릭하세요.</p>
+            <p class="mb-2"><strong>3. 자동 교체:</strong> 이미 이미지가 있는 퀴즈에 새 이미지를 업로드하면 기존 이미지는 자동으로 삭제됩니다.</p>
+            <p class="mb-0"><strong>지원 형식:</strong> PNG, JPG, JPEG, GIF, WEBP (최대 16MB)</p>
+        </div>
+    </div>
+</div>
+
+<!-- 필터 및 정렬 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchInput" placeholder="퀴즈 검색...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 mt-2 mt-md-0">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-warning" onclick="filterQuizzes('no-image')">
+                                <i class="fas fa-image me-1"></i>이미지 없음만
+                            </button>
+                            <button class="btn btn-outline-success" onclick="filterQuizzes('has-image')">
+                                <i class="fas fa-check me-1"></i>이미지 있음만
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="filterQuizzes('all')">
+                                <i class="fas fa-list me-1"></i>전체 보기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 퀴즈 목록 -->
+{% if all_quizzes %}
+<div class="row" id="quizContainer">
+    {% for quiz in all_quizzes %}
+    <div class="col-lg-6 mb-4 quiz-item" 
+         data-room-name="{{ quiz[1]|lower }}" 
+         data-has-image="{{ 'true' if quiz[6] else 'false' }}">
+        <div class="card h-100 {{ 'border-warning' if not quiz[6] else 'border-success' }}">
+            <div class="card-header {{ 'bg-warning bg-opacity-10' if not quiz[6] else 'bg-success bg-opacity-10' }}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-door-open me-2 text-primary"></i>
+                        {{ quiz[1] }}
+                        <small class="text-muted">(ID: {{ quiz[0] }})</small>
+                    </h6>
+                    <div class="d-flex align-items-center gap-2">
+                        {% if quiz[6] %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>이미지 있음
+                            </span>
+                        {% else %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-exclamation-triangle me-1"></i>이미지 없음
+                            </span>
+                        {% endif %}
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('quiz_detail', quiz_id=quiz[0]) }}">
+                                        <i class="fas fa-eye me-2"></i>상세보기
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('edit_quiz_page', quiz_id=quiz[0]) }}">
+                                        <i class="fas fa-edit me-2"></i>편집
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item text-danger" onclick="deleteQuiz({{ quiz[0] }}, {{ quiz[1]|tojson }})">
+                                        <i class="fas fa-trash me-2"></i>삭제
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- 현재 이미지 표시 -->
+                {% if quiz[6] %}
+                <div class="mb-3">
+                    <label class="fw-bold text-success small">현재 이미지:</label>
+                    <div class="text-center">
+                        <img src="{{ url_for('static', filename='images/' + quiz[6]) }}" 
+                             alt="퀴즈 이미지" 
+                             class="img-fluid rounded" 
+                             style="max-height: 200px; object-fit: cover;">
+                        <div class="small text-muted mt-1">{{ quiz[6] }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- 퀴즈 정보 요약 -->
+                <div class="mb-3">
+                    <label class="fw-bold text-muted small">배경:</label>
+                    <p class="text-muted small" style="white-space: pre-wrap;">{{ quiz[2] }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="fw-bold text-primary small">문제:</label>
+                    <p class="small" style="white-space: pre-wrap;">{{ quiz[3] }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="fw-bold text-warning small">힌트:</label>
+                    <p class="text-warning small" style="white-space: pre-wrap;">{{ quiz[4] }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="fw-bold text-success small">정답:</label>
+                    <p class="text-success small fw-bold">{{ quiz[5] }}</p>
+                </div>
+                
+                <!-- 이미지 업로드 폼 -->
+                <div class="border-top pt-3">
+                    <form id="uploadForm{{ quiz[0] }}" enctype="multipart/form-data" class="image-upload-form">
+                        <div class="mb-3">
+                            <label for="imageFile{{ quiz[0] }}" class="form-label fw-bold">
+                                <i class="fas fa-upload me-1"></i>
+                                {% if quiz[6] %}이미지 교체{% else %}이미지 업로드{% endif %}
+                            </label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="imageFile{{ quiz[0] }}" 
+                                   name="image" 
+                                   accept="image/*" 
+                                   onchange="previewImage({{ quiz[0] }}, this)">
+                            <div class="form-text">PNG, JPG, JPEG, GIF, WEBP 형식 지원 (최대 16MB)</div>
+                        </div>
+                        
+                        <!-- 이미지 미리보기 -->
+                        <div id="imagePreview{{ quiz[0] }}" class="mb-3" style="display: none;">
+                            <label class="fw-bold text-info small">미리보기:</label>
+                            <div class="text-center">
+                                <img id="previewImg{{ quiz[0] }}" 
+                                     src="" 
+                                     alt="미리보기" 
+                                     class="img-fluid rounded" 
+                                     style="max-height: 150px; object-fit: cover;">
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-sm-flex">
+                            <button type="button" 
+                                    class="btn {{ 'btn-warning' if quiz[6] else 'btn-primary' }} flex-fill"
+                                    onclick="uploadImage({{ quiz[0] }})">
+                                <i class="fas fa-upload me-1"></i>
+                                {% if quiz[6] %}교체하기{% else %}업로드{% endif %}
+                            </button>
+                            {% if quiz[6] %}
+                            <button type="button" 
+                                    class="btn btn-outline-danger"
+                                    onclick="removeImage({{ quiz[0] }})">
+                                <i class="fas fa-trash me-1"></i>삭제
+                            </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card-footer bg-light">
+                <small class="text-muted">
+                    <i class="fas fa-calendar me-1"></i>
+                    {{ quiz[7][:16] }}
+                </small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 검색 결과 없음 메시지 -->
+<div id="noResults" class="row" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">검색 결과가 없습니다</h5>
+                <p class="text-muted">다른 키워드로 검색해보세요.</p>
+                <button type="button" class="btn btn-primary" onclick="clearSearch()">
+                    <i class="fas fa-eraser me-1"></i>검색 초기화
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- 퀴즈가 없을 때 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-puzzle-piece fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">등록된 퀴즈가 없습니다</h5>
+                <p class="text-muted">먼저 퀴즈를 추가해주세요!</p>
+                <a href="{{ url_for('add_quiz_page') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>첫 번째 퀴즈 추가하기
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 진행 상황 모달 -->
+<div class="modal fade" id="uploadProgressModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">로딩중...</span>
+                </div>
+                <div>업로드 중...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    퀴즈 삭제 확인
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>다음 퀴즈를 삭제하시겠습니까?</p>
+                <p class="text-primary fw-bold" id="quizNameToDelete"></p>
+                <p class="text-danger"><strong>이 작업은 되돌릴 수 없습니다!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <form id="deleteForm" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>삭제
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 이미지 미리보기 함수
+function previewImage(quizId, input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImg' + quizId).src = e.target.result;
+            document.getElementById('imagePreview' + quizId).style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// 이미지 업로드 함수
+async function uploadImage(quizId) {
+    const fileInput = document.getElementById('imageFile' + quizId);
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('이미지 파일을 선택해주세요.');
+        return;
+    }
+    
+    // 진행 상황 모달 표시
+    const progressModal = new bootstrap.Modal(document.getElementById('uploadProgressModal'));
+    progressModal.show();
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    try {
+        const response = await fetch(`/quiz/${quizId}/upload-image`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // 성공 시 페이지 새로고침
+            location.reload();
+        } else {
+            alert('업로드 실패: ' + result.message);
+        }
+    } catch (error) {
+        alert('업로드 중 오류가 발생했습니다: ' + error.message);
+    } finally {
+        progressModal.hide();
+    }
+}
+
+// 이미지 삭제 함수 (실제로는 DB에서 경로만 제거)
+async function removeImage(quizId) {
+    if (!confirm('이 퀴즈의 이미지를 삭제하시겠습니까?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/quiz/${quizId}/upload-image`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({remove: true})
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            location.reload();
+        } else {
+            alert('삭제 실패: ' + result.message);
+        }
+    } catch (error) {
+        alert('삭제 중 오류가 발생했습니다: ' + error.message);
+    }
+}
+
+
+
+// 배경음악 삭제 함수
+async function deleteMusic(filename) {
+    if (!confirm(`"${filename}" 배경음악을 삭제하시겠습니까?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/music/delete/${encodeURIComponent(filename)}`, {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('배경음악이 삭제되었습니다.');
+            location.reload();
+        } else {
+            alert('삭제 실패: ' + result.message);
+        }
+    } catch (error) {
+        alert('삭제 중 오류가 발생했습니다: ' + error.message);
+    }
+}
+
+// 배경음악 대량 업로드 함수
+async function bulkUploadMusic() {
+    const fileInput = document.getElementById('bulkMusicFileInput');
+    const files = fileInput.files;
+    
+    if (!files || files.length === 0) {
+        alert('음악 파일을 선택해주세요.');
+        return;
+    }
+    
+    // 파일 크기 검증
+    const maxSingleFileSize = 50 * 1024 * 1024; // 50MB
+    const maxTotalSize = 500 * 1024 * 1024; // 500MB
+    let totalSize = 0;
+    let oversizedFiles = [];
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        totalSize += file.size;
+        
+        if (file.size > maxSingleFileSize) {
+            oversizedFiles.push(`${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+        }
+    }
+    
+    if (oversizedFiles.length > 0) {
+        alert(`다음 파일들이 50MB를 초과합니다:\n${oversizedFiles.join('\n')}`);
+        return;
+    }
+    
+    if (totalSize > maxTotalSize) {
+        const totalSizeMB = (totalSize / 1024 / 1024).toFixed(1);
+        alert(`선택한 파일들의 총 크기가 500MB를 초과합니다. (${totalSizeMB}MB)\n파일 수를 줄여서 다시 시도해주세요.`);
+        return;
+    }
+    
+    // 업로드할 파일 수와 크기 정보 표시
+    const totalSizeMB = (totalSize / 1024 / 1024).toFixed(1);
+    if (!confirm(`총 ${files.length}개의 파일 (${totalSizeMB}MB)을 업로드하시겠습니까?`)) {
+        return;
+    }
+    
+    // 진행 상황 표시를 위한 모달 생성
+    showBulkUploadProgress();
+    
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('music_files', files[i]);
+    }
+    
+    try {
+        updateBulkUploadProgress('업로드 중...', 0);
+        
+        const response = await fetch('/admin/music/bulk-upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        hideBulkUploadProgress();
+        
+        if (result.success) {
+            showBulkUploadResults(result);
+        } else {
+            alert('대량 업로드 실패: ' + result.message);
+        }
+    } catch (error) {
+        hideBulkUploadProgress();
+        alert('대량 업로드 중 오류가 발생했습니다: ' + error.message);
+    }
+}
+
+// 대량 업로드 진행 상황 표시
+function showBulkUploadProgress() {
+    const existingModal = document.getElementById('bulkUploadModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    const modalHtml = `
+        <div class="modal fade" id="bulkUploadModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>대량 업로드 진행 중
+                        </h5>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">업로드 중...</span>
+                        </div>
+                        <div id="bulkUploadMessage">업로드를 준비하고 있습니다...</div>
+                        <div class="progress mt-3">
+                            <div class="progress-bar" id="bulkUploadProgressBar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('bulkUploadModal'));
+    modal.show();
+}
+
+function updateBulkUploadProgress(message, percent) {
+    const messageEl = document.getElementById('bulkUploadMessage');
+    const progressBar = document.getElementById('bulkUploadProgressBar');
+    
+    if (messageEl) messageEl.textContent = message;
+    if (progressBar) progressBar.style.width = percent + '%';
+}
+
+function hideBulkUploadProgress() {
+    const modal = document.getElementById('bulkUploadModal');
+    if (modal) {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+        setTimeout(() => modal.remove(), 500);
+    }
+}
+
+// 대량 업로드 결과 표시
+function showBulkUploadResults(result) {
+    const existingModal = document.getElementById('bulkUploadResultModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    let resultsHtml = '';
+    
+    // 성공한 파일들 표시
+    if (result.uploaded_count > 0) {
+        resultsHtml += `
+            <div class="alert alert-success mb-3">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>${result.uploaded_count}개 파일이 성공적으로 업로드되었습니다!</strong>
+            </div>
+        `;
+    }
+    
+    // 오류 메시지들 표시
+    if (result.errors && result.errors.length > 0) {
+        resultsHtml += `
+            <div class="alert alert-warning mb-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>${result.errors.length}개 파일에서 오류가 발생했습니다:</strong>
+            </div>
+            <div style="max-height: 300px; overflow-y: auto;">
+        `;
+        
+        result.errors.forEach(error => {
+            resultsHtml += `
+                <div class="d-flex align-items-start mb-2">
+                    <i class="fas fa-times text-danger me-2 mt-1"></i>
+                    <span class="text-danger">${error}</span>
+                </div>
+            `;
+        });
+        
+        resultsHtml += '</div>';
+    }
+    
+    const modalHtml = `
+        <div class="modal fade" id="bulkUploadResultModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-chart-bar me-2"></i>업로드 결과
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        ${resultsHtml}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                        <button type="button" class="btn btn-primary" onclick="location.reload()">
+                            <i class="fas fa-refresh me-1"></i>페이지 새로고침
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('bulkUploadResultModal'));
+    modal.show();
+}
+
+// 검색 기능
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(performSearch, 300);
+});
+
+function performSearch() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    const quizItems = document.querySelectorAll('.quiz-item');
+    let visibleCount = 0;
+    
+    quizItems.forEach(item => {
+        const roomName = item.dataset.roomName;
+        const isVisible = !searchTerm || roomName.includes(searchTerm);
+        
+        item.style.display = isVisible ? 'block' : 'none';
+        if (isVisible) visibleCount++;
+    });
+    
+    document.getElementById('noResults').style.display = visibleCount === 0 && searchTerm ? 'block' : 'none';
+}
+
+// 필터 기능
+function filterQuizzes(type) {
+    const quizItems = document.querySelectorAll('.quiz-item');
+    let visibleCount = 0;
+    
+    quizItems.forEach(item => {
+        const hasImage = item.dataset.hasImage === 'true';
+        let isVisible = false;
+        
+        switch(type) {
+            case 'no-image':
+                isVisible = !hasImage;
+                break;
+            case 'has-image':
+                isVisible = hasImage;
+                break;
+            case 'all':
+            default:
+                isVisible = true;
+                break;
+        }
+        
+        item.style.display = isVisible ? 'block' : 'none';
+        if (isVisible) visibleCount++;
+    });
+    
+    document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+    
+    // 버튼 활성화 상태 업데이트
+    document.querySelectorAll('[onclick^="filterQuizzes"]').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    performSearch();
+}
+
+// 퀴즈 삭제 함수
+function deleteQuiz(quizId, quizName) {
+    document.getElementById('quizNameToDelete').textContent = quizName;
+    document.getElementById('deleteForm').action = `/quiz/${quizId}/delete`;
+    
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+
+// DOM 로드 완료 후 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    // 초기화 작업이 필요한 경우 여기에 추가
+});
+</script>
+{% endblock %} 

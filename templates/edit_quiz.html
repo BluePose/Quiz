@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}퀴즈 편집 - {{ quiz[1] }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-edit me-2"></i>퀴즈 편집
+            </h1>
+            <div>
+                {% if prev_quiz_id %}
+                <a href="{{ url_for('edit_quiz_page', quiz_id=prev_quiz_id) }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-chevron-left me-1"></i>이전 퀴즈
+                </a>
+                {% endif %}
+                {% if next_quiz_id %}
+                <a href="{{ url_for('edit_quiz_page', quiz_id=next_quiz_id) }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-chevron-right me-1"></i>다음 퀴즈
+                </a>
+                {% endif %}
+                <a href="{{ url_for('quiz_detail', quiz_id=quiz[0]) }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-arrow-left me-1"></i>돌아가기
+                </a>
+                <a href="{{ url_for('admin_console') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-list me-1"></i>관리자 콘솔
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-pencil-alt me-2"></i>퀴즈 정보 수정
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>편집 팁:</strong> 텍스트 영역에서 Enter 키로 줄바꿈을 만들 수 있습니다. 
+                    줄바꿈은 최종 결과에 그대로 반영됩니다.
+                </div>
+
+                <form method="POST" action="{{ url_for('update_quiz_route', quiz_id=quiz[0]) }}">
+                    <!-- 방의 이름 -->
+                    <div class="mb-4">
+                        <label for="room_name" class="form-label fw-bold">
+                            <i class="fas fa-door-open me-1 text-primary"></i>방의 이름
+                        </label>
+                        <input type="text" class="form-control" id="room_name" name="room_name" 
+                               value="{{ quiz[1] }}" maxlength="100" required>
+                        <div class="form-text">최대 100자까지 입력 가능합니다.</div>
+                    </div>
+
+                    <!-- 방의 배경 묘사 -->
+                    <div class="mb-4">
+                        <label for="background_description" class="form-label fw-bold">
+                            <i class="fas fa-home me-1 text-muted"></i>방의 배경 묘사
+                        </label>
+                        <textarea class="form-control" id="background_description" name="background_description" 
+                                  rows="4" maxlength="1000" required>{{ quiz[2] }}</textarea>
+                        <div class="form-text">방의 분위기와 상황을 자세히 설명해주세요. (최대 1000자)</div>
+                    </div>
+
+                    <!-- 문제 -->
+                    <div class="mb-4">
+                        <label for="question" class="form-label fw-bold">
+                            <i class="fas fa-puzzle-piece me-1 text-primary"></i>문제
+                        </label>
+                        <textarea class="form-control" id="question" name="question" 
+                                  rows="5" maxlength="1000" required>{{ quiz[3] }}</textarea>
+                        <div class="form-text">플레이어가 풀어야 할 문제를 명확하게 제시해주세요. (최대 1000자)</div>
+                    </div>
+
+                    <!-- 힌트 -->
+                    <div class="mb-4">
+                        <label for="hint" class="form-label fw-bold">
+                            <i class="fas fa-lightbulb me-1 text-info"></i>힌트
+                        </label>
+                        <textarea class="form-control" id="hint" name="hint" 
+                                  rows="3" maxlength="500" required>{{ quiz[4] }}</textarea>
+                        <div class="form-text">문제 해결에 도움이 되는 힌트를 제공해주세요. (최대 500자)</div>
+                    </div>
+
+                    <!-- 답 -->
+                    <div class="mb-4">
+                        <label for="answer" class="form-label fw-bold">
+                            <i class="fas fa-key me-1 text-success"></i>정답
+                        </label>
+                        <input type="text" class="form-control" id="answer" name="answer" 
+                               value="{{ quiz[5] }}" maxlength="100" required>
+                        <div class="form-text">정확한 답을 입력해주세요. (최대 100자)</div>
+                    </div>
+
+                    <!-- 버튼들 -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>원래대로
+                        </button>
+                        <button type="button" class="btn btn-info me-md-2" onclick="previewChanges()">
+                            <i class="fas fa-eye me-1"></i>미리보기
+                        </button>
+                        <button type="submit" class="btn btn-success" onclick="return confirm('퀴즈를 수정하시겠습니까?')">
+                            <i class="fas fa-save me-1"></i>수정 완료
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 미리보기 모달 -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>수정 사항 미리보기
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <!-- 미리보기 내용이 여기에 표시됩니다 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                <button type="button" class="btn btn-success" onclick="submitForm()">
+                    <i class="fas fa-save me-1"></i>이대로 저장
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 폼 리셋 기능
+function resetForm() {
+    if (confirm('모든 변경사항을 취소하고 원래 상태로 되돌리시겠습니까?')) {
+        location.reload();
+    }
+}
+
+// 미리보기 기능
+function previewChanges() {
+    const data = {
+        room_name: document.getElementById('room_name').value,
+        background_description: document.getElementById('background_description').value,
+        question: document.getElementById('question').value,
+        hint: document.getElementById('hint').value,
+        answer: document.getElementById('answer').value
+    };
+    
+    const previewContent = document.getElementById('previewContent');
+    previewContent.innerHTML = `
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-door-open me-2 text-primary"></i>
+                    ${escapeHtml(data.room_name)}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="fw-bold text-muted">방의 배경 묘사:</label>
+                    <p class="text-muted" style="white-space: pre-wrap;">${escapeHtml(data.background_description)}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="fw-bold text-primary">문제:</label>
+                    <p style="white-space: pre-wrap;">${escapeHtml(data.question)}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="fw-bold text-info">힌트:</label>
+                    <p class="text-info" style="white-space: pre-wrap;">${escapeHtml(data.hint)}</p>
+                </div>
+                
+                <div class="mb-0">
+                    <label class="fw-bold text-success">정답:</label>
+                    <p class="text-success fw-bold">${escapeHtml(data.answer)}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+}
+
+// HTML 이스케이프 함수
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 폼 제출 기능
+function submitForm() {
+    document.querySelector('form').submit();
+}
+
+// 글자 수 카운터 추가
+const formElements = ['room_name', 'background_description', 'question', 'hint', 'answer'];
+
+formElements.forEach(id => {
+    const element = document.getElementById(id);
+    const maxLength = element.getAttribute('maxlength');
+    if (maxLength) {
+        const counterSpan = document.createElement('span');
+        counterSpan.className = 'text-muted small float-end';
+        counterSpan.style.marginTop = '-1.5rem';
+        counterSpan.style.marginRight = '0.5rem';
+        counterSpan.style.position = 'relative';
+        counterSpan.style.zIndex = '10';
+        
+        function updateCounter() {
+            const current = element.value.length;
+            counterSpan.textContent = `${current}/${maxLength}`;
+            counterSpan.className = current > maxLength * 0.9 ? 'text-warning small float-end' : 'text-muted small float-end';
+        }
+        
+        element.addEventListener('input', updateCounter);
+        element.parentNode.appendChild(counterSpan);
+        updateCounter();
+    }
+});
+</script>
+{% endblock %} 

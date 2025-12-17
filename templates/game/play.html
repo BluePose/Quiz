@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방탈출 게임 - {{ quiz[1] }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%);
+            min-height: 100vh;
+            font-family: 'Orbitron', monospace;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* 게임 헤더 */
+        .game-header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #ff6b6b;
+            padding: 15px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .round-info {
+            color: #ff6b6b;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .lives-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .life-heart {
+            color: #ff6b6b;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+            animation: heartbeat 2s infinite;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .hints-display {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* 메인 게임 영역 - 한 화면 레이아웃 */
+        .game-container {
+            margin-top: 80px;
+            padding: 20px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+            min-height: calc(100vh - 80px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 게임 콘텐츠 그리드 */
+        .game-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            flex: 1;
+        }
+
+        /* 왼쪽 패널 - 방 정보 */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 오른쪽 패널 - 퀴즈 및 답변 */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 방 이미지 및 정보 */
+        .room-section {
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #ff6b6b;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .room-title {
+            color: #ff6b6b;
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+        }
+
+        .room-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .room-description {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b6b;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #cccccc;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* 퀴즈 섹션 */
+        .quiz-section {
+            background: rgba(30, 30, 30, 0.9);
+            border: 2px solid #4ecdc4;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(78, 205, 196, 0.2);
+        }
+
+        .quiz-title {
+            color: #4ecdc4;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .quiz-question {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #4ecdc4;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            color: #ffffff;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* 답 입력 섹션 */
+        .answer-section {
+            background: rgba(40, 40, 40, 0.9);
+            border: 2px solid #ffd700;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+        }
+
+        .answer-input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .answer-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1.1rem;
+            color: #ffffff;
+            font-family: 'Orbitron', monospace;
+            transition: all 0.3s ease;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #ffeb3b;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        .submit-button {
+            background: linear-gradient(45deg, #ffd700, #ffeb3b);
+            border: none;
+            color: #000;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .submit-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 힌트 버튼 */
+        .hint-button {
+            background: linear-gradient(45deg, #ff9800, #ffc107);
+            border: none;
+            color: #000;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 auto;
+        }
+
+        .hint-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 152, 0, 0.4);
+        }
+
+        .hint-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 힌트 표시 */
+        .hint-display {
+            background: rgba(255, 152, 0, 0.1);
+            border: 2px solid #ff9800;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .hint-text {
+            color: #ffc107;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        /* 메시지 표시 */
+        .message-display {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+
+        .message-success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4caf50;
+            color: #4caf50;
+        }
+
+        .message-error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid #f44336;
+            color: #f44336;
+        }
+
+        /* 로딩 오버레이 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .loading-spinner {
+            color: #ff6b6b;
+            font-size: 3rem;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .game-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .left-panel, .right-panel {
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .room-title {
+                font-size: 1.5rem;
+            }
+            
+            .answer-input-group {
+                flex-direction: column;
+            }
+            
+            .room-section, .quiz-section, .answer-section {
+                padding: 20px;
+            }
+            
+            .game-container {
+                padding: 15px;
+            }
+        }
+
+        /* 스크롤바 스타일링 */
+        .room-description::-webkit-scrollbar,
+        .quiz-question::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .room-description::-webkit-scrollbar-track,
+        .quiz-question::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .room-description::-webkit-scrollbar-thumb,
+        .quiz-question::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 107, 0.5);
+            border-radius: 4px;
+        }
+
+        .room-description::-webkit-scrollbar-thumb:hover,
+        .quiz-question::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 107, 107, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <!-- 게임 헤더 -->
+    <div class="game-header">
+        <div class="game-stats">
+            <div class="round-info">
+                <i class="fas fa-flag-checkered me-2"></i>
+                라운드 {{ current_round }} / {{ total_rounds }}
+            </div>
+            
+            <div class="lives-display">
+                <span>목숨:</span>
+                {% for i in range(lives) %}
+                    <i class="fas fa-heart life-heart"></i>
+                {% endfor %}
+                {% for i in range(3 - lives) %}
+                    <i class="far fa-heart" style="color: #666;"></i>
+                {% endfor %}
+            </div>
+            
+            <div class="hints-display">
+                <i class="fas fa-lightbulb me-2"></i>
+                힌트: {{ hints_used }} / {{ max_hints }}
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <i class="fas fa-spinner loading-spinner"></i>
+            <div class="h4">처리 중...</div>
+        </div>
+    </div>
+
+    <!-- 메인 게임 영역 -->
+    <div class="game-container">
+        <div class="game-content">
+            <!-- 왼쪽 패널 - 방 정보 -->
+            <div class="left-panel">
+                <div class="room-section">
+                    <h2 class="room-title">
+                        <i class="fas fa-door-open me-2"></i>
+                        {{ quiz[1] }}
+                    </h2>
+                    
+                    {% if quiz[6] %}
+                        <img src="{{ url_for('static', filename='images/' + quiz[6]) }}" 
+                             alt="{{ quiz[1] }}" class="room-image">
+                    {% else %}
+                        <div class="room-image d-flex align-items-center justify-content-center" 
+                             style="background: rgba(0,0,0,0.5); height: 300px;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="room-description">
+                        {{ quiz[2] }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽 패널 - 퀴즈 및 답변 -->
+            <div class="right-panel">
+                <div class="quiz-section">
+                    <h3 class="quiz-title">
+                        <i class="fas fa-puzzle-piece me-2"></i>
+                        해결해야 할 수수께끼
+                    </h3>
+                    
+                    <div class="quiz-question">
+                        {{ quiz[3] }}
+                    </div>
+                </div>
+
+                <div class="answer-section">
+                    <form id="answerForm">
+                        <div class="answer-input-group">
+                            <input type="text" 
+                                   class="answer-input" 
+                                   id="answerInput" 
+                                   placeholder="답을 입력하세요..." 
+                                   autocomplete="off">
+                            <button type="submit" class="submit-button" id="submitButton">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                제출
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center">
+                        <button class="hint-button" id="hintButton" 
+                                {% if hints_used >= max_hints %}disabled{% endif %}>
+                            <i class="fas fa-lightbulb"></i>
+                            힌트 사용 ({{ max_hints - hints_used }}개 남음)
+                        </button>
+                    </div>
+                    
+                    <!-- 힌트 표시 -->
+                    <div class="hint-display" id="hintDisplay">
+                        <div class="hint-text" id="hintText"></div>
+                    </div>
+                    
+                    <!-- 메시지 표시 -->
+                    <div class="message-display" id="messageDisplay"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 게임 상태
+        let gameActive = true;
+        let currentLives = {{ lives }};
+        let hintsUsed = {{ hints_used }};
+        const maxHints = {{ max_hints }};
+        
+        // 배경음악 관리
+        let backgroundMusic = null;
+
+        // DOM 요소
+        const answerForm = document.getElementById('answerForm');
+        const answerInput = document.getElementById('answerInput');
+        const submitButton = document.getElementById('submitButton');
+        const hintButton = document.getElementById('hintButton');
+        const hintDisplay = document.getElementById('hintDisplay');
+        const hintText = document.getElementById('hintText');
+        const messageDisplay = document.getElementById('messageDisplay');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // 답 제출 처리
+        answerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!gameActive) return;
+            
+            const answer = answerInput.value.trim();
+            if (!answer) {
+                showMessage('답을 입력해주세요!', 'error');
+                return;
+            }
+            
+            // 로딩 표시
+            showLoading();
+            submitButton.disabled = true;
+            
+            try {
+                const formData = new FormData();
+                formData.append('answer', answer);
+                
+                const response = await fetch('{{ url_for("game_answer") }}', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, result.correct ? 'success' : 'error');
+                    
+                    if (result.correct) {
+                        // 정답 - 다음 라운드로 이동
+                        gameActive = false;
+                        setTimeout(() => {
+                            window.location.href = result.redirect;
+                        }, 2000);
+                    } else {
+                        // 오답 - 목숨 업데이트
+                        if (result.lives !== undefined) {
+                            currentLives = result.lives;
+                            updateLivesDisplay();
+                        }
+                        
+                        if (result.redirect) {
+                            // 게임 오버
+                            gameActive = false;
+                            setTimeout(() => {
+                                window.location.href = result.redirect;
+                            }, 3000);
+                        } else {
+                            // 계속 플레이
+                            answerInput.value = '';
+                            answerInput.focus();
+                        }
+                    }
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('오류가 발생했습니다. 다시 시도해주세요.', 'error');
+            } finally {
+                hideLoading();
+                submitButton.disabled = false;
+            }
+        });
+
+        // 힌트 요청 처리
+        hintButton.addEventListener('click', async function() {
+            if (hintsUsed >= maxHints) return;
+            
+            showLoading();
+            hintButton.disabled = true;
+            
+            try {
+                const response = await fetch('{{ url_for("game_hint") }}', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    hintText.textContent = result.hint;
+                    hintDisplay.style.display = 'block';
+                    
+                    hintsUsed = result.hints_used;
+                    updateHintButton();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('힌트를 가져오는 중 오류가 발생했습니다.', 'error');
+            } finally {
+                hideLoading();
+                hintButton.disabled = hintsUsed >= maxHints;
+            }
+        });
+
+        // 목숨 표시 업데이트
+        function updateLivesDisplay() {
+            const livesDisplay = document.querySelector('.lives-display');
+            livesDisplay.innerHTML = '<span>목숨:</span>';
+            
+            for (let i = 0; i < currentLives; i++) {
+                livesDisplay.innerHTML += '<i class="fas fa-heart life-heart"></i>';
+            }
+            
+            for (let i = currentLives; i < 3; i++) {
+                livesDisplay.innerHTML += '<i class="far fa-heart" style="color: #666;"></i>';
+            }
+        }
+
+        // 힌트 버튼 업데이트
+        function updateHintButton() {
+            const remaining = maxHints - hintsUsed;
+            hintButton.innerHTML = `
+                <i class="fas fa-lightbulb"></i>
+                힌트 사용 (${remaining}개 남음)
+            `;
+            
+            if (remaining <= 0) {
+                hintButton.disabled = true;
+            }
+        }
+
+        // 메시지 표시
+        function showMessage(message, type) {
+            messageDisplay.textContent = message;
+            messageDisplay.className = `message-display message-${type}`;
+            messageDisplay.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDisplay.style.display = 'none';
+            }, 5000);
+        }
+
+        // 로딩 표시/숨김
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        // 키보드 이벤트
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !submitButton.disabled) {
+                answerForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // 배경음악 로드 및 재생
+        async function loadBackgroundMusic() {
+            try {
+                const response = await fetch('/api/random-music');
+                const result = await response.json();
+                
+                if (result.success && result.music_file) {
+                    backgroundMusic = new Audio(`/static/music/${result.music_file}`);
+                    backgroundMusic.loop = true;
+                    backgroundMusic.volume = 0.3; // 볼륨 30%
+                    
+                    // 자동 재생 시도
+                    backgroundMusic.play().catch(error => {
+                        console.log('자동 재생이 차단되었습니다. 사용자 상호작용 후 재생됩니다.');
+                    });
+                }
+            } catch (error) {
+                console.log('배경음악 로드 중 오류:', error);
+            }
+        }
+
+        // 사용자 상호작용 시 음악 재생 시도
+        function tryPlayMusic() {
+            if (backgroundMusic && backgroundMusic.paused) {
+                backgroundMusic.play().catch(error => {
+                    console.log('음악 재생 실패:', error);
+                });
+            }
+        }
+
+        // 페이지 로드 시 최상단으로 스크롤 및 배경음악 로드
+        window.addEventListener('load', function() {
+            // 최상단으로 스크롤
+            window.scrollTo(0, 0);
+            
+            // 입력창에 포커스 (약간의 지연 후)
+            setTimeout(() => {
+                answerInput.focus();
+            }, 500);
+            
+            loadBackgroundMusic();
+        });
+
+        // 사용자 상호작용 이벤트에 음악 재생 시도 추가
+        document.addEventListener('click', tryPlayMusic, { once: true });
+        document.addEventListener('keydown', tryPlayMusic, { once: true });
+    </script>
+</body>
+</html> 
