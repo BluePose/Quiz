@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>탈출 성공! - 방탈출 게임</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Self-contained design - no external dependencies -->
     <style>
         * {
             margin: 0;
@@ -17,9 +15,11 @@
         body {
             background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%);
             min-height: 100vh;
-            font-family: 'Orbitron', monospace;
+            font-family: 'Courier New', Monaco, 'Lucida Console', monospace;
             overflow: hidden;
             position: relative;
+            margin: 0;
+            padding: 10px;
         }
 
         /* 승리 애니메이션 배경 */
@@ -71,12 +71,13 @@
 
         /* 승리 타이틀 */
         .victory-title {
-            font-family: 'Creepster', cursive;
-            font-size: 5rem;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 5rem);
             color: #4caf50;
             text-shadow: 0 0 30px rgba(76, 175, 80, 0.8), 0 0 60px rgba(76, 175, 80, 0.5);
             margin-bottom: 20px;
             animation: victory-pulse 1.5s infinite alternate;
+            letter-spacing: 2px;
         }
 
         @keyframes victory-pulse {
@@ -253,14 +254,14 @@
 
     <!-- 메인 컨테이너 -->
     <div class="victory-container">
-        <i class="fas fa-trophy trophy-icon"></i>
+        <div class="trophy-icon">🏆</div>
         
         <h1 class="victory-title">
             ESCAPE SUCCESS!
         </h1>
         
         <p class="victory-subtitle">
-            <i class="fas fa-door-open me-2"></i>
+            🚪
             성공적으로 탈출했습니다!
         </p>
         
@@ -269,7 +270,7 @@
             <div class="stat-box">
                 <span class="stat-number">{{ total_rounds }}</span>
                 <div class="stat-label">
-                    <i class="fas fa-flag-checkered me-2"></i>
+                    🏁
                     완료한 라운드
                 </div>
             </div>
@@ -277,7 +278,7 @@
             <div class="stat-box">
                 <span class="stat-number">{{ hints_used }}</span>
                 <div class="stat-label">
-                    <i class="fas fa-lightbulb me-2"></i>
+                    💡
                     사용한 힌트
                 </div>
             </div>
@@ -302,12 +303,12 @@
         <!-- 액션 버튼들 -->
         <div class="action-buttons">
             <a href="{{ url_for('game_start') }}" class="action-button">
-                <i class="fas fa-redo"></i>
+                🔄
                 다시 도전하기
             </a>
             
             <a href="{{ url_for('dashboard') }}" class="action-button secondary-button">
-                <i class="fas fa-home"></i>
+                🏠
                 메인으로
             </a>
         </div>

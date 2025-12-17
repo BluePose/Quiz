@@ -59,8 +59,19 @@ def get_all_quizzes():
     ''')
     
     quizzes = cursor.fetchall()
+    # 각 퀴즈의 텍스트 필드에서 앞쪽 공백 제거
+    cleaned_quizzes = []
+    for quiz in quizzes:
+        quiz_list = list(quiz)
+        # background_description (index 2), question (index 3), hint (index 4) 처리
+        for i in [2, 3, 4]:
+            if quiz_list[i]:
+                lines = quiz_list[i].split('\n')
+                cleaned_lines = [line.lstrip() for line in lines]
+                quiz_list[i] = '\n'.join(cleaned_lines)
+        cleaned_quizzes.append(tuple(quiz_list))
     conn.close()
-    return quizzes
+    return cleaned_quizzes
 
 def get_quiz_by_id(quiz_id):
     """ID로 특정 퀴즈 조회"""
@@ -73,6 +84,16 @@ def get_quiz_by_id(quiz_id):
     ''', (quiz_id,))
     
     quiz = cursor.fetchone()
+    if quiz:
+        # 텍스트 필드의 앞쪽 공백 제거
+        quiz_list = list(quiz)
+        # background_description (index 2), question (index 3), hint (index 4) 처리
+        for i in [2, 3, 4]:
+            if quiz_list[i]:
+                lines = quiz_list[i].split('\n')
+                cleaned_lines = [line.lstrip() for line in lines]
+                quiz_list[i] = '\n'.join(cleaned_lines)
+        quiz = tuple(quiz_list)
     conn.close()
     return quiz
 

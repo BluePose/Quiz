@@ -46,6 +46,11 @@ def parse_single_quiz(block):
                 value = match.group(1).strip()
                 # 줄바꿈 보존하되 연속된 줄바꿈은 정리
                 if key in ['background_description', 'question', 'hint']:
+                    # 각 줄의 앞쪽 공백 제거 (들여쓰기 제거)
+                    lines = value.split('\n')
+                    cleaned_lines = [line.lstrip() for line in lines]  # 각 줄의 앞쪽 공백 제거
+                    value = '\n'.join(cleaned_lines)
+                    
                     value = re.sub(r'\n\s*\n', '\n\n', value).strip()  # 연속 줄바꿈 정리
                     value = re.sub(r'[ \t]+', ' ', value)  # 탭과 연속 공백만 정리
                 quiz[key] = value

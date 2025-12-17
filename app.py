@@ -48,6 +48,11 @@ def get_random_background_music():
         return None
 
 @app.route('/')
+def index():
+    """메인 페이지 - 게임 시작 화면"""
+    return render_template('game/start.html')
+
+@app.route('/dashboard')
 def dashboard():
     """대시보드 페이지"""
     total_quizzes = database.get_quiz_count()
@@ -523,12 +528,28 @@ def game_over():
                          total_rounds=total_rounds)
 
 if __name__ == '__main__':
+    import os
+
+    # Render에서는 환경변수 PORT로 포트를 넘겨줌
+    port = int(os.environ.get("PORT", 5000))
+
+    # 배포 시에는 init_database()를 여기서 호출하지 않고,
+    # 별도 스크립트나 첫 요청 시에만 한 번 돌리는 것도 고려.
+
     # 데이터베이스 초기화
     database.init_database()
     
-    print("🎮 방탈출 퀴즈 관리 시스템이 시작되었습니다!")
-    print("📝 대시보드: http://localhost:5000")
-    print("📋 퀴즈 목록: http://localhost:5000/quiz/list")
-    print("⚙️  관리자 콘솔: http://localhost:5000/admin")
+    # 샘플 퀴즈 자동 로드 (퀴즈가 없을 때만)
+    if database.get_quiz_count() == 0:
+        try:
+            from add_sample_data import add_sample_quizzes
+            add_sample_quizzes()
+            print("✅ 샘플 퀴즈가 자동으로 로드되었습니다!")
+        except Exception as e:
+            print(f"⚠️ 샘플 퀴즈 로드 실패: {e}")
+    
+    print("🎮 방탈출 게임이 시작되었습니다!")
+    print("🌐 게임 시작: http://localhost:5000")
+    print("⚙️ 관리자: http://localhost:5000/dashboard")
     
     app.run(debug=True, host='0.0.0.0', port=5000) 

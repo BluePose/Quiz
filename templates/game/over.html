@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게임 오버 - 방탈출 게임</title>
+    <!-- Self-contained design - no external dependencies -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 50%, #0f0f0f 100%);
+            min-height: 100vh;
+            font-family: 'Courier New', Monaco, 'Lucida Console', monospace;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .game-over-container {
+            text-align: center;
+            background: rgba(20, 20, 20, 0.9);
+            border: 3px solid #ff4444;
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 0 50px rgba(255, 68, 68, 0.3);
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .game-over-title {
+            color: #ff4444;
+            font-size: 3rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(255, 68, 68, 0.8);
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .stats-container {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            border-left: 4px solid #ff4444;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 1.2rem;
+        }
+
+        .stat-label {
+            color: #cccccc;
+        }
+
+        .stat-value {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .action-btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-retry {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .btn-retry:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.4);
+            color: white;
+        }
+
+        .btn-home {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .btn-home:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(78, 205, 196, 0.4);
+            color: white;
+        }
+
+        .encouragement {
+            color: #ffd700;
+            font-size: 1.1rem;
+            margin: 20px 0;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .game-over-container {
+                padding: 30px 20px;
+            }
+            
+            .game-over-title {
+                font-size: 2rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .action-btn {
+                width: 200px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-over-container">
+        <h1 class="game-over-title">
+            💀 GAME OVER
+        </h1>
+
+        <div class="encouragement">
+            "실패는 성공의 어머니입니다. 다시 도전해보세요!"
+        </div>
+
+        <div class="stats-container">
+            <h3 class="text-center mb-4" style="color: #ff6b6b;">
+                📊 게임 결과
+            </h3>
+            
+            <div class="stat-item">
+                <span class="stat-label">
+                    🏁 도달한 라운드:
+                </span>
+                <span class="stat-value">{{ current_round - 1 }} / {{ total_rounds }}</span>
+            </div>
+            
+            <div class="stat-item">
+                <span class="stat-label">
+                    📈 진행률:
+                </span>
+                <span class="stat-value">
+                    {% if total_rounds > 0 %}
+                        {{ "%.1f"|format(((current_round - 1) / total_rounds * 100)) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </span>
+            </div>
+            
+            <div class="stat-item">
+                <span class="stat-label">
+                    ❤️ 남은 목숨:
+                </span>
+                <span class="stat-value">0 / 3</span>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a href="{{ url_for('index') }}" class="action-btn btn-retry">
+                🔄 다시 도전
+            </a>
+            
+            <a href="{{ url_for('dashboard') }}" class="action-btn btn-home">
+                ⚙️ 관리자
+            </a>
+        </div>
+    </div>
+</body>
+</html>
