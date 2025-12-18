@@ -48,6 +48,11 @@ def get_random_background_music():
         return None
 
 @app.route('/')
+def index():
+    """메인 페이지 - 게임 시작 화면으로 리디렉트"""
+    return redirect(url_for('game_start'))
+
+@app.route('/dashboard')
 def dashboard():
     """대시보드 페이지"""
     total_quizzes = database.get_quiz_count()
