@@ -360,6 +360,8 @@ def game_start():
 @app.route('/play/enter', methods=['POST'])
 def game_enter():
     """게임 입장 - 새 게임 세션 시작"""
+    import time
+    
     # 게임 세션 초기화
     session['game_active'] = True
     session['current_round'] = 1
@@ -369,6 +371,7 @@ def game_enter():
     session['max_hints'] = 5  # 최대 힌트 수
     session['completed_quiz_ids'] = []  # 완료한 퀴즈 ID들
     session['current_quiz_id'] = None
+    session['start_time'] = time.time()  # 게임 시작 시간 기록
     
     # 첫 번째 퀴즈 선택
     return redirect(url_for('game_play'))
@@ -501,13 +504,82 @@ def game_clear():
     
     total_rounds = session.get('total_rounds', 0)
     hints_used = session.get('hints_used', 0)
+    start_time = session.get('start_time', 0)
+    
+    # 완료 시간 계산 (초 단위)
+    import time
+    completion_time = int(time.time() - start_time) if start_time else 0
+    
+    # 점수 계산
+    base_score = total_rounds * 100  # 라운드당 100점
+    hint_penalty = hints_used * 10   # 힌트당 -10점
+    time_bonus = max(0, 1000 - completion_time // 60 * 10)  # 시간 보너스 (분당 -10점)
+    final_score = max(0, base_score - hint_penalty + time_bonus)
+    
+    # 세션에 점수 저장
+    session['final_score'] = final_score
+    session['completion_time'] = completion_time
     
     # 게임 세션 종료
     session['game_active'] = False
     
     return render_template('game/clear.html', 
                          total_rounds=total_rounds,
-                         hints_used=hints_used)
+                         hints_used=hints_used,
+                         completion_time=completion_time,
+                         final_score=final_score)
+
+@app.route('/leaderboard/register', methods=['POST'])
+def register_leaderboard():
+    """리더보드에 기록 등록"""
+    try:
+        player_name = request.form.get('player_name', '').strip()
+        
+        if not player_name:
+            return jsonify({'success': False, 'message': '이름을 입력해주세요.'})
+        
+        if len(player_name) > 20:
+            return jsonify({'success': False, 'message': '이름은 20자 이하로 입력해주세요.'})
+        
+        # 세션에서 게임 결과 가져오기
+        total_rounds = session.get('total_rounds', 0)
+        hints_used = session.get('hints_used', 0)
+        completion_time = session.get('completion_time', 0)
+        final_score = session.get('final_score', 0)
+        
+        if total_rounds == 0:
+            return jsonify({'success': False, 'message': '게임 기록이 없습니다.'})
+        
+        # 리더보드에 추가
+        entry_id = database.add_leaderboard_entry(
+            player_name, total_rounds, hints_used, completion_time, final_score
+        )
+        
+        if entry_id:
+            # 등록 완료 후 세션 정리
+            session.pop('final_score', None)
+            session.pop('completion_time', None)
+            
+            return jsonify({
+                'success': True, 
+                'message': f'축하합니다! {player_name}님의 기록이 등록되었습니다!',
+                'entry_id': entry_id
+            })
+        else:
+            return jsonify({'success': False, 'message': '기록 등록에 실패했습니다.'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'오류가 발생했습니다: {str(e)}'})
+
+@app.route('/leaderboard')
+def leaderboard():
+    """리더보드 페이지"""
+    records = database.get_leaderboard(50)  # 상위 50명
+    total_records = database.get_leaderboard_count()
+    
+    return render_template('leaderboard.html',
+                         records=records,
+                         total_records=total_records)
 
 @app.route('/play/over')
 def game_over():
@@ -535,8 +607,8 @@ if __name__ == '__main__':
     database.init_database()
     
     print("🎮 방탈출 퀴즈 관리 시스템이 시작되었습니다!")
-    print(f"📝 대시보드: http://localhost:{port}")
-    print(f"📋 퀴즈 목록: http://localhost:{port}/quiz/list")
-    print(f"⚙️  관리자 콘솔: http://localhost:{port}/admin")
+    print("📝 대시보드: http://localhost:5000")
+    print("📋 퀴즈 목록: http://localhost:5000/quiz/list")
+    print("⚙️  관리자 콘솔: http://localhost:5000/admin")
     
-    app.run(debug=True, host='0.0.0.0', port=port) 
+    app.run(debug=True, host='0.0.0.0', port=5000) 

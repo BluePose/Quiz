@@ -22,6 +22,19 @@ def init_database():
         )
     ''')
     
+    # 리더보드 테이블 생성
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS leaderboard (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_name TEXT NOT NULL,
+            total_rounds INTEGER NOT NULL,
+            hints_used INTEGER NOT NULL,
+            completion_time INTEGER NOT NULL,
+            score INTEGER DEFAULT 0,
+            completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
     # 기존 테이블에 image_path 컬럼이 없다면 추가
     cursor.execute("PRAGMA table_info(quizzes)")
     columns = [column[1] for column in cursor.fetchall()]
@@ -59,19 +72,8 @@ def get_all_quizzes():
     ''')
     
     quizzes = cursor.fetchall()
-    # 각 퀴즈의 텍스트 필드에서 앞쪽 공백 제거
-    cleaned_quizzes = []
-    for quiz in quizzes:
-        quiz_list = list(quiz)
-        # background_description (index 2), question (index 3), hint (index 4) 처리
-        for i in [2, 3, 4]:
-            if quiz_list[i]:
-                lines = quiz_list[i].split('\n')
-                cleaned_lines = [line.lstrip() for line in lines]
-                quiz_list[i] = '\n'.join(cleaned_lines)
-        cleaned_quizzes.append(tuple(quiz_list))
     conn.close()
-    return cleaned_quizzes
+    return quizzes
 
 def get_quiz_by_id(quiz_id):
     """ID로 특정 퀴즈 조회"""
@@ -84,16 +86,6 @@ def get_quiz_by_id(quiz_id):
     ''', (quiz_id,))
     
     quiz = cursor.fetchone()
-    if quiz:
-        # 텍스트 필드의 앞쪽 공백 제거
-        quiz_list = list(quiz)
-        # background_description (index 2), question (index 3), hint (index 4) 처리
-        for i in [2, 3, 4]:
-            if quiz_list[i]:
-                lines = quiz_list[i].split('\n')
-                cleaned_lines = [line.lstrip() for line in lines]
-                quiz_list[i] = '\n'.join(cleaned_lines)
-        quiz = tuple(quiz_list)
     conn.close()
     return quiz
 
@@ -201,6 +193,65 @@ def clear_all_quizzes():
     conn.commit()
     conn.close()
     print("모든 퀴즈가 삭제되었습니다.")
+
+def add_leaderboard_entry(player_name, total_rounds, hints_used, completion_time, score=0):
+    """리더보드에 새 기록 추가"""
+    try:
+        conn = sqlite3.connect(DATABASE_NAME)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO leaderboard (player_name, total_rounds, hints_used, completion_time, score)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (player_name, total_rounds, hints_used, completion_time, score))
+        
+        entry_id = cursor.lastrowid
+        conn.commit()
+        return entry_id
+    except sqlite3.Error as e:
+        print(f"리더보드 추가 오류: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+def get_leaderboard(limit=20):
+    """리더보드 조회 (상위 기록들)"""
+    try:
+        conn = sqlite3.connect(DATABASE_NAME)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT player_name, total_rounds, hints_used, completion_time, score, completed_at
+            FROM leaderboard 
+            ORDER BY score DESC, completion_time ASC, hints_used ASC
+            LIMIT ?
+        ''', (limit,))
+        
+        records = cursor.fetchall()
+        return records
+    except sqlite3.Error as e:
+        print(f"리더보드 조회 오류: {e}")
+        return []
+    finally:
+        if conn:
+            conn.close()
+
+def get_leaderboard_count():
+    """리더보드 총 기록 수"""
+    try:
+        conn = sqlite3.connect(DATABASE_NAME)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT COUNT(*) FROM leaderboard')
+        count = cursor.fetchone()[0]
+        return count
+    except sqlite3.Error as e:
+        print(f"리더보드 카운트 오류: {e}")
+        return 0
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == "__main__":
     init_database() 
